@@ -265,7 +265,7 @@ class BaseTaskPage(object):
         elif "@action" in userinput and userinput["@action"] == "load_submission_input" and "submissionid" in userinput:
             submission = self.submission_manager.get_submission(userinput["submissionid"], user_check=not is_staff)
             submission = self.submission_manager.get_input_from_submission(submission)
-            submission = self.submission_manager.get_feedback_from_submission(submission, show_everything=is_staff)
+            submission = self.submission_manager.get_feedback_from_submission(task=task, submission=submission, show_everything=is_staff)
             if not submission:
                 raise web.notfound()
             web.header('Content-Type', 'application/json')
