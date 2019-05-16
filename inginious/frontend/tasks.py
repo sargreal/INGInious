@@ -17,12 +17,12 @@ from inginious.common.tags import Tag
 class WebAppTask(Task):
     """ A task that stores additional context information, specific to the web app """
 
-    def __init__(self, course, taskid, content, task_fs, hook_manager, task_problem_types):
+    def __init__(self, course, taskid, content, task_fs, translations_fs, hook_manager, task_problem_types):
         # We load the descriptor of the task here to allow plugins to modify settings of the task before it is read by the Task constructor
         if not id_checker(taskid):
             raise Exception("Task with invalid id: " + course.get_id() + "/" + taskid)
 
-        super(WebAppTask, self).__init__(course, taskid, content, task_fs, hook_manager, task_problem_types)
+        super(WebAppTask, self).__init__(course, taskid, content, task_fs, translations_fs, hook_manager, task_problem_types)
 
         self._name = self._data.get('name', 'Task {}'.format(self.get_id()))
 
@@ -59,7 +59,7 @@ class WebAppTask(Task):
         self._regenerate_input_random = bool(self._data.get("regenerate_input_random", False))
 
         # Tags
-        self._tags = Tag.create_tags_from_dict(self._data.get("tags", {})) 
+        self._tags = Tag.create_tags_from_dict(self._data.get("tags", {}))
 
     def get_grading_weight(self):
         """ Get the relative weight of this task in the grading """
@@ -81,7 +81,8 @@ class WebAppTask(Task):
         elif self.get_accessible_time().is_never_accessible():
             return _("It's too late")
         else:
-            return self.get_accessible_time().get_end_date().strftime("%d/%m/%Y %H:%M:%S")
+            # Prefer to show the soft deadline rather than the hard one
+            return self.get_accessible_time().get_soft_end_date().strftime("%d/%m/%Y %H:%M:%S")
 
     def is_group_task(self):
         """ Indicates if the task submission mode is per groups """
@@ -99,8 +100,8 @@ class WebAppTask(Task):
         """ Get the context(description) of this task """
         context = self.gettext(language, self._context) if self._context else ""
         vals = self._hook_manager.call_hook('task_context', course=self.get_course(), task=self, default=context)
-        return ParsableText(vals[0], "rst", self._translations.get(language, gettext.NullTranslations())) if len(vals) else \
-            ParsableText(context, "rst", self._translations.get(language, gettext.NullTranslations()))
+        return ParsableText(vals[0], "rst", self._translations.get(language, gettext.NullTranslations())) if len(vals) \
+            else ParsableText(context, "rst", self._translations.get(language, gettext.NullTranslations()))
 
     def get_authors(self, language):
         """ Return the list of this task's authors """
