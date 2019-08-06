@@ -6,7 +6,9 @@
 """ Course page """
 import web
 
+from inginious.frontend.courses import WebAppCourse
 from inginious.frontend.pages.utils import INGIniousAuthPage
+
 
 def handle_course_unavailable(app_homepath, template_helper, user_manager, course):
     """ Displays the course_unavailable page or the course registration page """
@@ -29,7 +31,8 @@ class CoursePage(INGIniousAuthPage):
     def get_course(self, courseid):
         """ Return the course """
         try:
-            course = self.course_factory.get_course(courseid)
+            course = self.database.courses.find_one({"_id": courseid})
+            course = WebAppCourse(course["_id"], course, self.task_factory, self.plugin_manager)
         except:
             raise web.notfound()
 
@@ -70,7 +73,7 @@ class CoursePage(INGIniousAuthPage):
             tasks_score = [0.0, 0.0]
 
             for taskid, task in tasks.items():
-                tasks_data[taskid] = {"visible": task.get_accessible_time().after_start() or is_admin, "succeeded": False,
+                tasks_data[taskid] = {"visible": task.get_accessible_time(course).after_start() or is_admin, "succeeded": False,
                                       "grade": 0.0}
                 tasks_score[1] += task.get_grading_weight() if tasks_data[taskid]["visible"] else 0
 

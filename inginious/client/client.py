@@ -290,7 +290,7 @@ class Client(BetterParanoidPirateClient):
         job_id = str(uuid.uuid4())
 
         if debug == "ssh" and ssh_callback is None:
-            self._logger.error("SSH callback not set in %s/%s", task.get_course_id(), task.get_id())
+            self._logger.error("SSH callback not set in %s/%s", task.get_courseid(), task.get_id())
             callback(("crash", "SSH callback not set."), 0.0, {}, {}, {}, None, "", "")
             return
         # wrap ssh_callback to ensure it is called at most once, and that it can always be called to simplify code
@@ -298,8 +298,7 @@ class Client(BetterParanoidPirateClient):
 
         environment = task.get_environment_id()
         if environment not in self._available_environments:
-            self._logger.warning("Env %s not available for task %s/%s", environment, task.get_course_id(),
-                                 task.get_id())
+            self._logger.warning("Env %s not available for task %s/%s", environment, task.get_courseid(), task.get_id())
             ssh_callback(None, None, None)  # ssh_callback must be called once
             callback(("crash", "Environment not available."), 0.0, {}, {}, "", {}, None, "", "")
             return
@@ -308,7 +307,7 @@ class Client(BetterParanoidPirateClient):
         if self._available_environments[environment] != environment_type:
             self._logger.warning("Env %s does not have the expected type %s, but rather %s, in task %s/%s",
                                  environment, environment_type, self._available_environments[environment],
-                                 task.get_course_id(), task.get_id())
+                                 task.get_courseid(), task.get_id())
             ssh_callback(None, None, None)  # ssh_callback must be called once
             callback(("crash", "Environment {}-{} not available.".format(environment_type, environment)), 0.0, {}, {},
                      "", {}, None, "", "")
@@ -316,7 +315,7 @@ class Client(BetterParanoidPirateClient):
 
         environment_parameters = task.get_environment_parameters()
 
-        msg = ClientNewJob(job_id, priority, task.get_course_id(), task.get_id(), inputdata, environment,
+        msg = ClientNewJob(job_id, priority, task.get_courseid(), task.get_id(), inputdata, environment,
                            environment_parameters, debug, launcher_name)
         self._loop.call_soon_threadsafe(asyncio.ensure_future,
                                         self._create_transaction(msg, task=task, callback=callback,

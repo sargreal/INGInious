@@ -67,7 +67,7 @@ class CourseSubmissionsPage(INGIniousSubmissionAdminPage):
 
         statistics = None
         if user_input.stat != "no_stat":
-            statistics = compute_statistics(tasks, data, True if "with_pond_stat" == user_input.stat else False)
+            statistics = compute_statistics(course, data, True if "with_pond_stat" == user_input.stat else False)
 
         if "csv" in web.input():
             return make_csv(data)
