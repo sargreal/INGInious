@@ -26,7 +26,7 @@ def _migrate_from_v_0_6(content):
 class Task(object):
     """ Contains the data for a task """
 
-    def __init__(self, courseid, taskid, content, task_fs, translations_fs, hook_manager, task_problem_types):
+    def __init__(self, courseid, taskid, content, filesystem, hook_manager, task_problem_types):
         """
             Init the task. course is a Course object, taskid the task id, and content is a dictionnary containing the data needed to initialize the Task object.
             If init_data is None, the data will be taken from the course tasks' directory.
@@ -36,7 +36,7 @@ class Task(object):
         content = self._migrate_from_v1(content)
         self._courseid = courseid
         self._taskid = taskid
-        self._fs = task_fs
+        self._fs = filesystem
         self._hook_manager = hook_manager
         self._data = content
         self._environment_id = self._data.get('environment_id', 'default')
@@ -46,10 +46,21 @@ class Task(object):
             raise Exception("Tasks must have some problems descriptions")
 
         # i18n
-        self._translations_fs = translations_fs
         self._translations = {}
-        if not translations_fs:
-            translations_fs = task_fs.from_subfolder("$i18n")
+        self._course_fs = self._fs.from_subfolder(courseid)
+        self._course_fs.ensure_exists()
+        self._task_fs = self._course_fs.from_subfolder(taskid)
+        self._task_fs.ensure_exists()
+
+        translations_fs = self._task_fs.from_subfolder("$i18n")
+
+        if not translations_fs.exists():
+            translations_fs = self._task_fs.from_subfolder("student").from_subfolder("$i18n")
+        if not translations_fs.exists():
+            translations_fs = self._course_fs.from_subfolder("$common").from_subfolder("$i18n")
+        if not translations_fs.exists():
+            translations_fs = self._course_fs.from_subfolder("$common").from_subfolder("student").from_subfolder("$i18n")
+
         if translations_fs.exists():
             for f in translations_fs.list(folders=False, files=True, recursive=False):
                 lang = f[0:len(f) - 3]
@@ -68,6 +79,10 @@ class Task(object):
 
     def get_translation_obj(self, language):
         return self._translations.get(language, gettext.NullTranslations())
+
+    def get_descriptor(self):
+        """ Returns the task descriptor """
+        return self._data
 
     def gettext(self, language, *args, **kwargs):
         return self.get_translation_obj(language).gettext(*args, **kwargs)
@@ -113,7 +128,7 @@ class Task(object):
 
     def get_fs(self):
         """ Returns a FileSystemProvider which points to the folder of this task """
-        return self._fs
+        return self._task_fs
 
     def get_hook(self):
         """ Returns the hook manager parameter for this task"""

@@ -22,6 +22,7 @@ from inginious.common import exceptions
 from inginious.frontend.pages.course import handle_course_unavailable
 from inginious.frontend.pages.utils import INGIniousPage, INGIniousAuthPage
 from inginious.frontend.courses import WebAppCourse
+from inginious.frontend.tasks import WebAppTask
 
 
 class BaseTaskPage(object):
@@ -29,7 +30,8 @@ class BaseTaskPage(object):
 
     def __init__(self, calling_page):
         self.cp = calling_page
-        self.task_factory = self.cp.task_factory
+        self.filesystem = self.cp.filesystem
+        self.problem_types = self.cp.problem_types
         self.submission_manager = self.cp.submission_manager
         self.user_manager = self.cp.user_manager
         self.database = self.cp.database
@@ -98,7 +100,7 @@ class BaseTaskPage(object):
         # Fetch the course
         try:
             course = self.database.courses.find_one({"_id": courseid})
-            course = WebAppCourse(course["_id"], course, self.task_factory, self.plugin_manager)
+            course = WebAppCourse(course["_id"], course, self.filesystem, self.plugin_manager)
         except exceptions.CourseNotFoundException as ex:
             raise web.notfound(str(ex))
 
@@ -110,7 +112,9 @@ class BaseTaskPage(object):
 
         # Fetch the task
         try:
-            tasks = OrderedDict((tid, t) for tid, t in course.get_tasks().items() if self.user_manager.task_is_visible_by_user(course, t, username, isLTI))
+            task_descs = self.database.tasks.find({"courseid": course.get_id()}).sort("order")
+            tasks = OrderedDict((task_desc["taskid"],  WebAppTask(course.get_id(), task_desc["taskid"], task_desc, self.filesystem, self.plugin_manager, self.problem_types)) for task_desc in task_descs)
+            tasks = OrderedDict((tid, t) for tid, t in tasks.items() if self.user_manager.task_is_visible_by_user(course, t, username, is_LTI))
             task = tasks[taskid]
         except KeyError:
             raise web.notfound()
@@ -189,12 +193,14 @@ class BaseTaskPage(object):
         username = self.user_manager.session_username()
 
         course = self.database.courses.find_one({"_id": courseid})
-        course = WebAppCourse(course["_id"], course, self.task_factory, self.plugin_manager)
+        course = WebAppCourse(course["_id"], course, self.filesystem, self.plugin_manager)
 
         if not self.user_manager.course_is_open_to_user(course, username, isLTI):
             return handle_course_unavailable(self.cp.app.get_homepath(), self.template_helper, self.user_manager, course)
 
-        task = course.get_task(taskid)
+        task_desc = self.database.tasks.find_one({"courseid": course.get_id(), "taskid": taskid})
+        task = WebAppTask(course.get_id(), task_desc["taskid"], task_desc, self.filesystem, self.plugin_manager, self.problem_types)
+
         if not self.user_manager.task_is_visible_by_user(course, task, username, isLTI):
             return self.template_helper.get_renderer().task_unavailable()
 
@@ -420,7 +426,7 @@ class TaskPageStaticDownload(INGIniousPage):
         try:
 
             course = self.database.courses.find_one({"_id": courseid})
-            course = WebAppCourse(course["_id"], course, self.task_factory, self.plugin_manager)
+            course = WebAppCourse(course["_id"], course, self.filesystem, self.plugin_manager)
 
             if not self.user_manager.course_is_open_to_user(course):
                 return handle_course_unavailable(self.app.get_homepath(), self.template_helper, self.user_manager, course)
@@ -430,8 +436,8 @@ class TaskPageStaticDownload(INGIniousPage):
             if taskid == "$common":
                 public_folder = course.get_fs().from_subfolder("$common").from_subfolder("public")
             else:
-
-                task = course.get_task(taskid)
+                task_desc = self.database.tasks.find_one({"courseid": course.get_id(), "taskid": taskid})
+                task = WebAppTask(course.get_id(), task_desc["taskid"], task_desc, self.filesystem, self.plugin_manager, self.problem_types)
                 if not self.user_manager.task_is_visible_by_user(course, task):  # ignore LTI check here
                     return self.template_helper.get_renderer().task_unavailable()
 

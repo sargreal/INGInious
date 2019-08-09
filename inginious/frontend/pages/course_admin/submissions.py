@@ -15,6 +15,7 @@ from collections import OrderedDict
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousAdminPage, INGIniousSubmissionAdminPage
 from inginious.frontend.pages.course_admin.statistics import compute_statistics
 from inginious.common.base import id_checker
+from inginious.frontend.tasks import WebAppTask
 
 
 class CourseSubmissionsPage(INGIniousSubmissionAdminPage):
@@ -36,8 +37,9 @@ class CourseSubmissionsPage(INGIniousSubmissionAdminPage):
                 raise web.notfound()
 
             input = self.get_input()
-            tasks = course.get_tasks()
-            data, __ = self.get_submissions(course, input)
+            task_descs = self.database.tasks.find({"courseid": course.get_id()}).sort("order")
+            tasks = OrderedDict((task_desc["taskid"],  WebAppTask(course.get_id(), task_desc["taskid"], task_desc, self.filesystem, self.plugin_manager, self.problem_types)) for task_desc in task_descs)
+            data, __ = self.get_submissions(course, tasks, input)
             for submission in data:
                 self.submission_manager.replay_job(tasks[submission["taskid"]], submission)
             msgs.append(_("{0} selected submissions were set for replay.").format(str(len(data))))
@@ -56,14 +58,12 @@ class CourseSubmissionsPage(INGIniousSubmissionAdminPage):
     def page(self, course, msgs=None):
         """ Get all data and display the page """
         msgs = msgs if msgs else []
-
         user_input = self.get_input()
         data, limit, above_limit = self.submissions_from_user_input(course, user_input, msgs)  # ONLY audiences user wants to query
         if len(data) == 0 and not self.show_collapse(user_input):
             msgs.append(_("No submissions found"))
 
         users = self.get_users(course)  # All users of the course
-        tasks = course.get_tasks()  # All tasks of the course
 
         statistics = None
         if user_input.stat != "no_stat":

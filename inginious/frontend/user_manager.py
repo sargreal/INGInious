@@ -411,7 +411,7 @@ class UserManager:
     #      User task/course info management      #
     ##############################################
 
-    def get_course_cache(self, username, course):
+    def get_course_cache(self, username, course, tasks):
         """
         :param username: The username
         :param course: A Course object
@@ -423,9 +423,9 @@ class UserManager:
 
             Note that only the task already seen at least one time will be present in the dict task_grades.
         """
-        return self.get_course_caches([username], course)[username]
+        return self.get_course_caches([username], course, tasks)[username]
 
-    def get_course_caches(self, usernames, course):
+    def get_course_caches(self, usernames, course, tasks):
         """
         :param usernames: List of username for which we want info. If usernames is None, data from all users will be returned.
         :param course: A Course object
@@ -445,7 +445,6 @@ class UserManager:
         if usernames is not None:
             match["username"] = {"$in": usernames}
 
-        tasks = course.get_tasks()
         taskids = tasks.keys()
         match["taskid"] = {"$in": list(taskids)}
 

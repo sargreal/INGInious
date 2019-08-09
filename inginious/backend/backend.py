@@ -171,6 +171,7 @@ class Backend(object):
                 jobs_waiting.append((msg.job_id, job_client_addr[0] == client_addr, msg.course_id+"/"+msg.task_id, msg.launcher,
                                      self._get_time_limit_estimate(msg)))
 
+
         await ZMQUtils.send_with_addr(self._client_socket, client_addr, BackendGetQueue(jobs_running, jobs_waiting))
 
     async def update_queue(self):

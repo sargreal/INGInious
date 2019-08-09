@@ -41,11 +41,13 @@ class ClientNewJob(metaclass=MessageMeta, msgtype="client_new_job"):
                  course_id: str, task_id: str, inputdata: Dict[str, Any],
                  environment: str, environment_parameters: Dict[str, Any],
                  debug: Union[str, bool], launcher: str):
+
         """
         :param job_id: the client-side job id that is associated to this job
         :param priority: the job priority
         :param course_id: course id of the task to run
         :param task_id: task id of the task to run
+        :param task_data: task dictionary
         :param inputdata: student input data
         :param environment: environment to use
         :param environment_parameters: parameters for the environment (timeouts, limits, ...)
