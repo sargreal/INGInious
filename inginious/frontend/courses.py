@@ -162,7 +162,7 @@ class WebAppCourse(Course):
     def get_description(self, language):
         """Returns the course description """
         description = self.gettext(language, self._description) if self._description else ''
-        return ParsableText(description, "rst", self._translations.get(language, gettext.NullTranslations()))
+        return ParsableText(description, "rst", language=language, translation=self._translations.get(language, gettext.NullTranslations()))
 
     def get_tags(self):
         return self._tags

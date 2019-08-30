@@ -66,6 +66,7 @@ class DisplayableCodeProblem(CodeProblem, DisplayableProblem):
     def show_input(self, template_helper, language, seed):
         """ Show BasicCodeProblem and derivatives """
         header = ParsableText(self.gettext(language,self._header), "rst",
+                              language=language,
                               translation=self._translations.get(language, gettext.NullTranslations()))
         return str(DisplayableCodeProblem.get_renderer(template_helper).tasks.code(self.get_id(), header, 8, 0, self._language, self._optional, self._default))
 
@@ -94,6 +95,7 @@ class DisplayableCodeSingleLineProblem(CodeSingleLineProblem, DisplayableProblem
     def show_input(self, template_helper, language, seed):
         """ Show InputBox """
         header = ParsableText(self.gettext(language, self._header), "rst",
+                              language=language,
                               translation=self._translations.get(language, gettext.NullTranslations()))
         return str(DisplayableCodeSingleLineProblem.get_renderer(template_helper)
                    .tasks.single_line_code(self.get_id(), header, "text", 0, self._optional, self._default))
@@ -132,6 +134,7 @@ class DisplayableFileProblem(FileProblem, DisplayableProblem):
     def show_input(self, template_helper, language, seed):
         """ Show FileBox """
         header = ParsableText(self.gettext(language, self._header), "rst",
+                              language=language,
                               translation=self._translations.get(language, gettext.NullTranslations()))
         return str(DisplayableFileProblem.get_renderer(template_helper).tasks.file(self.get_id(), header, self._max_size, self._allowed_exts))
 
@@ -191,11 +194,13 @@ class DisplayableMultipleChoiceProblem(MultipleChoiceProblem, DisplayableProblem
         rand.shuffle(choices)
 
         header = ParsableText(self.gettext(language, self._header), "rst",
+                              language=language,
                               translation=self._translations.get(language, gettext.NullTranslations()))
 
         return str(DisplayableMultipleChoiceProblem.get_renderer(template_helper).tasks.multiple_choice(
             self.get_id(), header, self._multiple, choices,
             lambda text: ParsableText(self.gettext(language, text) if text else "", "rst",
+                                      language=language,
                                       translation=self._translations.get(language, gettext.NullTranslations()))))
 
     @classmethod
@@ -220,6 +225,7 @@ class DisplayableMatchProblem(MatchProblem, DisplayableProblem):
     def show_input(self, template_helper, language, seed):
         """ Show MatchProblem """
         header = ParsableText(self.gettext(language, self._header), "rst",
+                              language=language,
                               translation=self._translations.get(language, gettext.NullTranslations()))
         return str(DisplayableMatchProblem.get_renderer(template_helper).tasks.match(self.get_id(), header))
 

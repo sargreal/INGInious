@@ -10,12 +10,30 @@ from datetime import datetime
 
 import tidylib
 from docutils import core, nodes
+from docutils.nodes import Structural, Element, SkipChildren
 from docutils.parsers.rst import directives, Directive
 from docutils.parsers.rst.directives.admonitions import BaseAdmonition
 from docutils.statemachine import StringList
 from docutils.writers import html4css1
 
 from inginious.frontend.accessible_time import parse_date
+
+
+class translated_section(Structural, Element):
+    pass
+
+class TranslateDirective(Directive):
+    has_content = True
+    required_arguments = 1
+    optional_arguments = 10 #reasonable ;-)
+
+    def run(self):
+        self.assert_has_content()
+        my_node = translated_section()
+        my_node['lang'] = self.arguments
+        self.state.nested_parse(self.content, self.content_offset,
+                                my_node)
+        return [my_node]
 
 
 class CustomBaseAdmonition(BaseAdmonition):
@@ -89,6 +107,41 @@ class _CustomHTMLWriter(html4css1.Writer, object):
 
     class _CustomHTMLTranslator(html4css1.HTMLTranslator, object):  # pylint: disable=abstract-method
         """ A custom HTML translator """
+
+        def visit_translated_section(self, node):
+            # first check if we are the first "translate block" in the chain of translate blocks
+            # also gather all the successive translate blocks
+            members = []
+            for family_member in node.parent.children:
+                if isinstance(family_member, translated_section):
+                    if len(members) == 0 and node != family_member:
+                            raise SkipChildren()
+                    members.append(family_member)
+                elif len(members) != 0:
+                    break
+
+            #if we are here, we have the whole family, and we are the first member
+            lang = self.document.settings.language
+
+            # find the "default" member
+            best = members[0]
+            for family_member in members:
+                if "default" in family_member["lang"]:
+                    best = family_member
+                    break
+
+            # find the best for the current language
+            for family_member in members:
+                if lang in family_member["lang"]:
+                    best = family_member
+                    break
+
+            # replace our content by the best one's content
+            node.children = best.children
+
+
+        def depart_translated_section(self, node):
+            return
 
         def visit_container(self, node):
             """ Custom version of visit_container that do not put 'container' in div class"""
@@ -204,11 +257,12 @@ class _CustomHTMLWriter(html4css1.Writer, object):
 class ParsableText(object):
     """Allow to parse a string with different parsers"""
 
-    def __init__(self, content, mode="rst", show_everything=False, translation=gettext.NullTranslations()):
+    def __init__(self, content, mode="rst", show_everything=False, language="default", translation=gettext.NullTranslations()):
         """
             content             The string to be parsed.
             mode                The parser to be used. Currently, only rst(reStructuredText) and HTML are supported.
             show_everything     Shows things that are normally hidden, such as the hidden-util directive.
+            language            A string with the language (en/fr/...)
         """
         mode = mode.lower()
         if mode not in ["rst", "html"]:
@@ -218,6 +272,7 @@ class ParsableText(object):
         self._translation = translation
         self._mode = mode
         self._show_everything = show_everything
+        self._language = language
 
     def original_content(self):
         """ Returns the original content """
@@ -230,7 +285,7 @@ class ParsableText(object):
                 if self._mode == "html":
                     self._parsed = self.html(self._content, self._show_everything, self._translation)
                 else:
-                    self._parsed = self.rst(self._content, self._show_everything, self._translation, debug=debug)
+                    self._parsed = self.rst(self._content, self._show_everything, self._language, self._translation, debug=debug)
             except Exception as e:
                 if debug:
                     raise BaseException("Parsing failed") from e
@@ -255,7 +310,7 @@ class ParsableText(object):
         return out
 
     @classmethod
-    def rst(cls, string, show_everything=False, translation=gettext.NullTranslations(), initial_header_level=3,
+    def rst(cls, string, show_everything=False, language="default", translation=gettext.NullTranslations(), initial_header_level=3,
             debug=False):
         """Parses reStructuredText"""
         overrides = {
@@ -264,6 +319,7 @@ class ParsableText(object):
             'syntax_highlight': 'none',
             'force_show_hidden_until': show_everything,
             'translation': translation,
+            'language': language,
             'raw_enabled': True,
             'file_insertion_enabled': False,
             'math_output': 'MathJax'
@@ -292,3 +348,4 @@ directives.register_directive("note", _gen_admonition_cls(nodes.note))
 directives.register_directive("tip", _gen_admonition_cls(nodes.tip))
 directives.register_directive("warning", _gen_admonition_cls(nodes.warning))
 directives.register_directive("hidden-until", HiddenUntilDirective)
+directives.register_directive("translate", TranslateDirective)
