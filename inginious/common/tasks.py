@@ -33,7 +33,6 @@ class Task(object):
         """
         content = _migrate_from_v_0_6(content)
 
-        content = self._migrate_from_v1(content)
         self._courseid = courseid
         self._taskid = taskid
         self._fs = filesystem

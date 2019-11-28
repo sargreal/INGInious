@@ -18,6 +18,9 @@ class WebAppCourse(object):
     """ A course with some modification for users """
     _logger = logging.getLogger("inginious.webapp.courses")
 
+    def get_translation_obj(self, language):
+        return self._translations.get(language, gettext.NullTranslations())
+
     def gettext(self, language, *args, **kwargs):
         translation = self._translations.get(language, gettext.NullTranslations())
         return translation.gettext(*args, **kwargs)
