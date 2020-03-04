@@ -48,7 +48,18 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx_tabs.tabs',
-    'IPython.sphinxext.ipython_console_highlighting'
+    'IPython.sphinxext.ipython_console_highlighting',
+    'sphinxcontrib.redoc'
+]
+
+#this is the redoc configuration to define OpenAPI doc
+redoc = [
+    {
+        'name': 'INGinious API',
+        'page': 'api',
+        'spec': 'specs/inginious-api.yml',
+        'embed': True,
+    }
 ]
 
 # Add any paths that contain templates here, relative to this directory.

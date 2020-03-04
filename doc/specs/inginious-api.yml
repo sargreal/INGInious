@@ -1,0 +1,17 @@
+swagger: "2.0"
+info:
+  title: INGInious API
+  version: "1.0.0"
+host: example.com/api/v0
+paths:
+  /auth_methods:
+    get:
+      summary: Auth available methods
+      description: |
+        Returns all the auth methods available.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: list
+            ref : '#/auth_methods'
