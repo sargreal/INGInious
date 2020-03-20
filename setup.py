@@ -40,7 +40,8 @@ test_requires = [
 
 doc_requires = [
     "sphinx-tabs >= 1.1.13",
-    "ipython >= 7.6.1"
+    "ipython >= 7.6.1",
+    "sphinxcontrib-redoc"
 ]
 
 # Platform specific dependencies
