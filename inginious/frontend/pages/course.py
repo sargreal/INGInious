@@ -5,6 +5,7 @@
 
 """ Course page """
 import web
+import logging
 
 from collections import OrderedDict
 from inginious.frontend.courses import WebAppCourse
@@ -25,6 +26,7 @@ def handle_course_unavailable(app_homepath, template_helper, user_manager, cours
 
 class CoursePage(INGIniousAuthPage):
     """ Course page """
+    _logger = logging.getLogger("inginious.webapp.course")
 
     def preview_allowed(self, courseid):
         course = self.get_course(courseid)
@@ -63,7 +65,14 @@ class CoursePage(INGIniousAuthPage):
             return handle_course_unavailable(self.app.get_homepath(), self.template_helper, self.user_manager, course)
         else:
             task_descs = self.database.tasks.find({"courseid": course.get_id()}).sort("order")
-            tasks = OrderedDict((task_desc["taskid"], WebAppTask(course.get_id(), task_desc["taskid"], task_desc, self.filesystem, self.plugin_manager, self.problem_types)) for task_desc in task_descs)
+            tasks = OrderedDict()
+            for task_desc in task_descs:
+                try:
+                    tasks[task_desc["taskid"]] = WebAppTask(course.get_id(), task_desc["taskid"],
+                                                            task_desc, self.filesystem, self.plugin_manager,
+                                                            self.problem_types)
+                except Exception as e:
+                    self._logger.warning(e)
             last_submissions = self.submission_manager.get_user_last_submissions(5, {"courseid": course.get_id(), "taskid": {"$in": list(tasks.keys())}})
 
             for submission in last_submissions:

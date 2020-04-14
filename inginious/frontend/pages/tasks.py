@@ -12,6 +12,7 @@ import urllib.parse
 import urllib.request
 import random
 import time
+import logging
 
 import web
 from bson.objectid import ObjectId
@@ -27,6 +28,7 @@ from inginious.frontend.tasks import WebAppTask
 
 class BaseTaskPage(object):
     """ Display a task (and allow to reload old submission/file uploaded during a submission) """
+    _logger = logging.getLogger("inginious.webapp.task")
 
     def __init__(self, calling_page):
         self.cp = calling_page
@@ -113,7 +115,14 @@ class BaseTaskPage(object):
         # Fetch the task
         try:
             task_descs = self.database.tasks.find({"courseid": course.get_id()}).sort("order")
-            tasks = OrderedDict((task_desc["taskid"],  WebAppTask(course.get_id(), task_desc["taskid"], task_desc, self.filesystem, self.plugin_manager, self.problem_types)) for task_desc in task_descs)
+            tasks = OrderedDict()
+            for task_desc in task_descs:
+                try:
+                    tasks[task_desc["taskid"]] = WebAppTask(course.get_id(), task_desc["taskid"],
+                                                            task_desc, self.filesystem, self.plugin_manager,
+                                                            self.problem_types)
+                except Exception as e:
+                    self._logger.warning(e)
             tasks = OrderedDict((tid, t) for tid, t in tasks.items() if self.user_manager.task_is_visible_by_user(course, t, username, is_LTI))
             task = tasks[taskid]
         except KeyError:
