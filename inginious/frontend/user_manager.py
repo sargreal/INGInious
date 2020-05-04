@@ -392,6 +392,7 @@ class UserManager:
             if user_profile:
                 # Found an email, existing user account, abort without binding
                 self._logger.exception("The binding email is already used by another account!")
+                return False
 
             # Check if username can be used
             user_profile = self._database.users.find_one({"username": username})
@@ -407,6 +408,7 @@ class UserManager:
                                          "bindings": {auth_id: [username, additional]},
                                          "language": self._session.get("language", "en")})
             self.connect_user(new_username, realname, email, self._session.get("language", "en"))
+        return True
 
     ##############################################
     #      User task/course info management      #
