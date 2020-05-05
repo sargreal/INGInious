@@ -18,6 +18,8 @@ from inginious.frontend.pages.utils import INGIniousPage
 class RegistrationPage(INGIniousPage):
     """ Registration page for DB authentication """
 
+    _logger = logging.getLogger("inginious.webapp.register")
+
     def GET(self):
         """ Handles GET request """
         if self.user_manager.session_logged_in() or not self.app.allow_registration:
@@ -27,8 +29,6 @@ class RegistrationPage(INGIniousPage):
         reset = None
         msg = ""
         data = web.input()
-
-        self._logger = logging.getLogger("inginious.webapp.register")
 
         if "activate" in data:
             msg, error = self.activate_user(data)
