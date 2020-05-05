@@ -228,6 +228,7 @@ def get_app(config):
         web.config.smtp_username = smtp_conf.get("username", "")
         web.config.smtp_password = smtp_conf.get("password", "")
         web.config.smtp_sendername = smtp_conf.get("sendername", "no-reply@ingnious.org")
+        web.config.smtp_replyto = smtp_conf.get("replyto", web.config.smtp_sendername)
 
     # Add some helpers for the templates
     template_helper.add_to_template_globals("_", _)
