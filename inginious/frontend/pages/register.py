@@ -8,6 +8,7 @@
 import hashlib
 import random
 import re
+import logging
 
 import web
 
@@ -26,6 +27,8 @@ class RegistrationPage(INGIniousPage):
         reset = None
         msg = ""
         data = web.input()
+
+        self._logger = logging.getLogger("inginious.webapp.register")
 
         if "activate" in data:
             msg, error = self.activate_user(data)
@@ -110,7 +113,8 @@ To activate your account, please click on the following link :
 """)
                                  + web.ctx.home + "/register?activate=" + activate_hash, {"reply-to", web.config.smtp_replyto})
                     msg = _("You are succesfully registered. An email has been sent to you for activation.")
-                except:
+                except Exception, e:
+                    _logger.exception(e)
                     error = True
                     msg = _("Something went wrong while sending you activation email. Please contact the administrator.")
 
